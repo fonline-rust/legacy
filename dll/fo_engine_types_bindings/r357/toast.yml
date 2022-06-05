@@ -6,7 +6,7 @@ tasks:
     command: |
       set -euo pipefail
       apt-get update
-      apt-get install --yes build-essential curl clang-3.9
+      apt-get install --yes build-essential curl clang-3.9 git
 
   create_user:
     description: Create a user who doesn't have root privileges.
@@ -39,15 +39,27 @@ tasks:
       rustup component add rustfmt
       rm -rf "$(dirname "$(rustup which rustc)")/../share"
 
-  install_generator:
-    description: Install bindgen generator
+  prefetch_generator:
     dependencies:
       - install_rust
     user: user
     command: |
       . $HOME/.myrc
+      git clone https://github.com/fonline-rust/fo_bindgen.git
+      cd fo_bindgen/generate
+      cargo check
+
+  install_generator:
+    description: Install bindgen generator
+    dependencies:
+      - prefetch_generator
+    user: user
+    command: |
+      . $HOME/.myrc
       echo 'export LLVM_CONFIG_PATH=/usr/bin/llvm-config-3.9' >> $HOME/.myrc
-      cargo install --git https://github.com/fonline-rust/fo_bindgen.git -- fo_bindgen_generate
+      cd fo_bindgen/generate
+      git pull
+      cargo install --path .
 
   copy_input_r357:
     description: Copy input r357

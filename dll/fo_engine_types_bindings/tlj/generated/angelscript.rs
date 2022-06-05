@@ -6,6 +6,26 @@
 pub type asBYTE = ::std::os::raw::c_uchar;
 pub type asDWORD = ::std::os::raw::c_ulong;
 #[repr(C)]
+pub struct asITypeInfo__bindgen_vtable(::std::os::raw::c_void);
+#[repr(C)]
+#[derive(Debug)]
+pub struct asITypeInfo {
+    pub vtable_: *const asITypeInfo__bindgen_vtable,
+}
+#[test]
+fn bindgen_test_layout_asITypeInfo() {
+    assert_eq!(
+        ::std::mem::size_of::<asITypeInfo>(),
+        4usize,
+        concat!("Size of: ", stringify!(asITypeInfo))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<asITypeInfo>(),
+        4usize,
+        concat!("Alignment of ", stringify!(asITypeInfo))
+    );
+}
+#[repr(C)]
 pub struct ScriptString__bindgen_vtable(::std::os::raw::c_void);
 #[repr(C)]
 pub struct ScriptString {
@@ -43,6 +63,142 @@ fn bindgen_test_layout_ScriptString() {
             stringify!(ScriptString),
             "::",
             stringify!(refCount)
+        )
+    );
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct SArrayBuffer {
+    pub maxElements: asDWORD,
+    pub numElements: asDWORD,
+    pub data: [asBYTE; 1usize],
+}
+#[test]
+fn bindgen_test_layout_SArrayBuffer() {
+    assert_eq!(
+        ::std::mem::size_of::<SArrayBuffer>(),
+        12usize,
+        concat!("Size of: ", stringify!(SArrayBuffer))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<SArrayBuffer>(),
+        4usize,
+        concat!("Alignment of ", stringify!(SArrayBuffer))
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<SArrayBuffer>())).maxElements as *const _ as usize },
+        0usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(SArrayBuffer),
+            "::",
+            stringify!(maxElements)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<SArrayBuffer>())).numElements as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(SArrayBuffer),
+            "::",
+            stringify!(numElements)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<SArrayBuffer>())).data as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(SArrayBuffer),
+            "::",
+            stringify!(data)
+        )
+    );
+}
+#[repr(C)]
+pub struct CScriptArray__bindgen_vtable(::std::os::raw::c_void);
+#[repr(C)]
+#[derive(Debug)]
+pub struct CScriptArray {
+    pub vtable_: *const CScriptArray__bindgen_vtable,
+    pub refCount: ::std::os::raw::c_int,
+    pub gcFlag: bool,
+    pub objType: *mut asITypeInfo,
+    pub buffer: *mut SArrayBuffer,
+    pub elementSize: ::std::os::raw::c_int,
+    pub subTypeId: ::std::os::raw::c_int,
+}
+#[test]
+fn bindgen_test_layout_CScriptArray() {
+    assert_eq!(
+        ::std::mem::size_of::<CScriptArray>(),
+        28usize,
+        concat!("Size of: ", stringify!(CScriptArray))
+    );
+    assert_eq!(
+        ::std::mem::align_of::<CScriptArray>(),
+        4usize,
+        concat!("Alignment of ", stringify!(CScriptArray))
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CScriptArray>())).refCount as *const _ as usize },
+        4usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CScriptArray),
+            "::",
+            stringify!(refCount)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CScriptArray>())).gcFlag as *const _ as usize },
+        8usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CScriptArray),
+            "::",
+            stringify!(gcFlag)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CScriptArray>())).objType as *const _ as usize },
+        12usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CScriptArray),
+            "::",
+            stringify!(objType)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CScriptArray>())).buffer as *const _ as usize },
+        16usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CScriptArray),
+            "::",
+            stringify!(buffer)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CScriptArray>())).elementSize as *const _ as usize },
+        20usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CScriptArray),
+            "::",
+            stringify!(elementSize)
+        )
+    );
+    assert_eq!(
+        unsafe { &(*(::std::ptr::null::<CScriptArray>())).subTypeId as *const _ as usize },
+        24usize,
+        concat!(
+            "Offset of field: ",
+            stringify!(CScriptArray),
+            "::",
+            stringify!(subTypeId)
         )
     );
 }
