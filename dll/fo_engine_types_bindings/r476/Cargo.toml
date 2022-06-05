@@ -1,5 +1,5 @@
 [package]
-name = "fo_engine_types_generate"
+name = "fo_engine_types_bindings_r476"
 version = "0.1.0"
 authors = ["qthree <qthree3@gmail.com>"]
 edition = "2018"
@@ -8,11 +8,8 @@ edition = "2018"
 
 [features]
 default = []
-generate = ["bindgen"]
-r357 = []
-r476 = []
+client = []
+server = []
 
 [dependencies]
-bindgen = { version = "0.52", optional = true }
-
-[workspace]
+fo_engine_types_bindings_exports = { path = "../exports" }

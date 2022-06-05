@@ -1,0 +1,93 @@
+image: i386/ubuntu:14.04
+default: update_r357
+tasks:
+  install_packages:
+    description: Install system packages.
+    command: |
+      set -euo pipefail
+      apt-get update
+      apt-get install --yes build-essential curl clang-3.9
+
+  create_user:
+    description: Create a user who doesn't have root privileges.
+    command: |
+      set -euo pipefail
+      adduser --disabled-password --gecos '' user
+
+  prepare_user:
+    description: Create a user who doesn't have root privileges.
+    dependencies:
+      - create_user
+    user: user
+    command: |
+      set -euo pipefail
+      echo 'set -euo pipefail' > $HOME/.myrc
+      chmod +x $HOME/.myrc
+
+  install_rust:
+    description: Install Rust, a systems programming language.
+    dependencies:
+      - install_packages
+      - prepare_user
+    user: user
+    command: |
+      . $HOME/.myrc
+      curl https://sh.rustup.rs -sSf |
+        sh -s -- -y --default-toolchain 1.61.0 --default-host i686-unknown-linux-gnu
+      . $HOME/.cargo/env
+      cat $HOME/.cargo/env >> $HOME/.myrc
+      rustup component add rustfmt
+      rm -rf "$(dirname "$(rustup which rustc)")/../share"
+
+  install_generator:
+    description: Install bindgen generator
+    dependencies:
+      - install_rust
+    user: user
+    command: |
+      . $HOME/.myrc
+      echo 'export LLVM_CONFIG_PATH=/usr/bin/llvm-config-3.9' >> $HOME/.myrc
+      cargo install --git https://github.com/fonline-rust/fo_bindgen.git -- fo_bindgen_generate
+
+  copy_input_r357:
+    description: Copy input r357
+    input_paths:
+      - input/StlPort
+      - input/AngelScript
+      - input/fonline.h
+      - input/_defines.fos
+      - input/fo.h
+    dependencies:
+      - install_generator
+    user: user
+
+  generate_bindings_r357:
+    description: Generate bindings using bindgen crate api for r357
+    input_paths:
+      - generator.toml
+    dependencies:
+      - copy_input_r357
+    user: user
+    command: |
+      . $HOME/.myrc
+      fo_bindgen_generate
+
+  test_r357:
+    description: test generated bindings for r357
+    input_paths:
+      - Cargo.toml
+      - src/lib.rs
+    dependencies:
+      - generate_bindings_r357
+    user: user
+    command: |
+      . $HOME/.myrc
+      cargo test --features=client,server
+
+  update_r357:
+    description: update generated bindings for r357
+    output_paths:
+      - generated/
+    dependencies:
+      - test_r357
+    user: user

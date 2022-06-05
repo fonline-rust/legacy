@@ -1,5 +1,5 @@
 image: i386/ubuntu:14.04
-default: update_r357
+default: update_r476
 tasks:
   install_packages:
     description: Install system packages.
@@ -33,107 +33,60 @@ tasks:
     command: |
       . $HOME/.myrc
       curl https://sh.rustup.rs -sSf |
-        sh -s -- -y --default-toolchain 1.40.0
+        sh -s -- -y --default-toolchain 1.61.0 --default-host i686-unknown-linux-gnu
       . $HOME/.cargo/env
       cat $HOME/.cargo/env >> $HOME/.myrc
       rustup component add rustfmt
       rm -rf "$(dirname "$(rustup which rustc)")/../share"
 
-  prebuild_crate:
-    description: Copy Cargo.toml of bindgen-related crate
-    input_paths:
-      - generate/Cargo.toml
-      - generate/src/lib.rs
+  install_generator:
+    description: Install bindgen generator
     dependencies:
       - install_rust
     user: user
     command: |
       . $HOME/.myrc
       echo 'export LLVM_CONFIG_PATH=/usr/bin/llvm-config-3.9' >> $HOME/.myrc
-      cd generate
-      cargo build --release --features=generate
-
-  copy_input_r357:
-    description: Copy input r357
-    input_paths:
-      - input/r357/StlPort
-      - input/r357/AngelScript
-      - input/r357/fonline.h
-      - input/r357/_defines.fos
-      - input/r357/fo.h
-    dependencies:
-      - prebuild_crate
-    user: user
+      cargo install --git https://github.com/fonline-rust/fo_bindgen.git -- fo_bindgen_generate
 
   copy_input_r476:
     description: Copy input r476
     input_paths:
-      - input/r476/AngelScript
-      - input/r476/fonline.h
-      - input/r476/_defines.fos
-      - input/r476/fo.h
+      - input/AngelScript
+      - input/fonline.h
+      - input/_defines.fos
+      - input/fo.h
     dependencies:
-      - prebuild_crate
+      - install_generator
     user: user
-
-  generate_bindings_r357:
-    description: Generate bindings using bindgen crate api for r357
-    input_paths:
-      - generate/src/main.rs
-    dependencies:
-      - copy_input_r357
-    user: user
-    command: |
-      . $HOME/.myrc
-      cd generate
-      cargo run --release --features=generate,r357
 
   generate_bindings_r476:
     description: Generate bindings using bindgen crate api for r476
     input_paths:
-      - src/bin/generate.rs
+      - generator.toml
     dependencies:
       - copy_input_r476
     user: user
     command: |
       . $HOME/.myrc
-      cargo run --bin generate --release --features=generate,r476
-
-  test_r357:
-    description: test generated bindings for r357
-    input_paths:
-      - src/lib.rs
-    dependencies:
-      - generate_bindings_r357
-    user: user
-    command: |
-      . $HOME/.myrc
-      cd generate
-      cargo test --features=bindings,r357,client,server
+      fo_bindgen_generate
 
   test_r476:
     description: test generated bindings for r476
     input_paths:
+      - Cargo.toml
       - src/lib.rs
     dependencies:
       - generate_bindings_r476
     user: user
     command: |
       . $HOME/.myrc
-      cargo test --features=bindings,r476,client,server
-
-  update_r357:
-    description: update generated bindings for r357
-    output_paths:
-      - src/generated/r357
-    dependencies:
-      - generate_bindings_r357
-    user: user
+      cargo test --features=client,server
 
   update_r476:
     description: update generated bindings for r476
     output_paths:
-      - src/generated/r476
+      - generated/
     dependencies:
       - test_r476
     user: user

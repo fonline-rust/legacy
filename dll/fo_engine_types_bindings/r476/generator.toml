@@ -1,0 +1,3 @@
+args = ["-xc++", "-m32"]
+input = "input/fo.h"
+output = "generated/"
