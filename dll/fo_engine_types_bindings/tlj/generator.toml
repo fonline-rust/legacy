@@ -1,0 +1,3 @@
+args = ["-xc++", "-m32", "-Iinput/StlPort", "-D_M_IX86"]
+input = "input/fo.h"
+output = "generated/"

@@ -1,0 +1,15 @@
+[package]
+name = "fo_engine_types_bindings_tlj"
+version = "0.1.0"
+authors = ["qthree <qthree3@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[features]
+default = []
+client = []
+server = []
+
+[dependencies]
+fo_bindgen_exports = { git = "https://github.com/fonline-rust/fo_bindgen.git" }
