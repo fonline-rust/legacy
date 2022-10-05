@@ -8,13 +8,14 @@ mod palette;
 mod retriever;
 
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::path::Path;
 pub type PathMap<K, V> = BTreeMap<K, V>;
 pub type ChangeTime = std::time::SystemTime;
 pub use crate::{
     converter::{Converter, GetImageError, RawImage},
-    retriever::{fo::FoRetriever, HasPalette, Retriever},
+    retriever::{fo::FoRetriever, Retriever},
+    palette::Palette,
 };
 
 #[cfg(feature = "sled-retriever")]
@@ -38,7 +39,7 @@ pub struct FileInfo {
     compressed_size: u64,
 }
 impl FileInfo {
-    fn location<'a>(&self, data: &'a FoData) -> Option<&'a std::path::PathBuf> {
+    fn location<'a>(&self, data: &'a FoRegistry) -> Option<&'a std::path::PathBuf> {
         use std::convert::TryInto;
         match self.location {
             FileLocation::Archive(index) => data
@@ -90,23 +91,47 @@ pub enum DataInitError {
     CacheStale,
 }
 
+pub struct FoData<R = FoRetriever> {
+    pub retriever: R,
+    pub palette: Palette,
+}
+impl FoData {
+    pub fn init<P: AsRef<Path>, P2: AsRef<Path>>(
+        client_root: P,
+        palette_path: P2,
+    ) -> Result<Self, DataInitError> {
+        let data = FoRegistry::init(client_root)?;
+        let retriever = FoRetriever::new(data);
+
+        let palette = palette::load_palette(palette_path).map_err(DataInitError::LoadPalette)?;
+        let palette = palette.colors_multiply(4);
+        
+        Ok(Self{retriever, palette})
+    }
+}
+impl<R> FoData<R> {
+    pub fn converter(&self) -> Converter<'_, '_, R> {
+        Converter::new(&self.retriever, &self.palette)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
-pub struct FoData {
+pub struct FoRegistry {
     changed: ChangeTime,
     archives: Vec<FoArchive>,
     files: PathMap<String, FileInfo>,
     //cache: HashMap<(String, OutputType), FileData>,
-    palette: Vec<(u8, u8, u8)>,
+    //palette: Palette,
 }
 
 const CACHE_PATH: &str = "fo_data.bin";
-impl FoData {
+impl FoRegistry {
     pub fn stub() -> Self {
-        FoData {
+        FoRegistry {
             changed: ChangeTime::now(),
             archives: Default::default(),
             files: Default::default(),
-            palette: Default::default(),
+            //palette: Default::default(),
         }
     }
     fn recover_from_cache<P: AsRef<Path>>(client_root: P) -> Result<Self, DataInitError> {
@@ -118,7 +143,7 @@ impl FoData {
             .modified()
             .map_err(Error::CacheIO)?;
         let reader = std::io::BufReader::new(cache_file);
-        let fo_data: FoData = bincode::deserialize_from(reader).map_err(Error::CacheDeserialize)?;
+        let fo_data: FoRegistry = bincode::deserialize_from(reader).map_err(Error::CacheDeserialize)?;
         let datafiles_changetime =
             datafiles::datafiles_changetime(client_root).map_err(Error::Datafiles)?;
         let cache_changed = cache_changed.min(fo_data.changed);
@@ -132,9 +157,8 @@ impl FoData {
         }
         Ok(fo_data)
     }
-    pub fn init<P: AsRef<Path>, P2: AsRef<Path>>(
-        client_root: P,
-        palette_path: P2,
+    pub fn init(
+        client_root: impl AsRef<Path>,
     ) -> Result<Self, DataInitError> {
         type Error = DataInitError;
         match Self::recover_from_cache(&client_root) {
@@ -142,16 +166,14 @@ impl FoData {
             ok => return ok,
         }
 
-        let palette = palette::load_palette(palette_path).map_err(Error::LoadPalette)?;
-        let palette = palette.colors_multiply(4);
         let archives = datafiles::parse_datafile(client_root).map_err(Error::Datafiles)?;
         let files = crawler::gather_paths(&archives).map_err(Error::GatherPaths)?;
         let changed = ChangeTime::now();
-        let fo_data = FoData {
+        let fo_data = FoRegistry {
             changed,
             archives,
             files,
-            palette,
+            //palette,
         };
         {
             let cache_file = std::fs::File::create(CACHE_PATH).map_err(Error::CacheIO)?;
@@ -189,7 +211,7 @@ mod test_stuff {
 
     #[cfg(not(feature = "sled-retriever"))]
     pub fn test_retriever() -> crate::FoRetriever {
-        let fo_data = crate::FoData::init(CLIENT_FOLDER, palette_path()).unwrap();
+        let fo_data = crate::FoRegistry::init(CLIENT_FOLDER).unwrap();
         fo_data.into_retriever()
     }
 
@@ -238,22 +260,22 @@ mod tests {
 
         save_frame(
             &frm.directions[0].frames[0],
-            &palette.colors_multiply(1),
+            palette.colors_multiply(1).colors_tuples(),
             test_assets().join("output/EDG1001_1.png"),
         );
         save_frame(
             &frm.directions[0].frames[0],
-            &palette.colors_multiply(2),
+            palette.colors_multiply(2).colors_tuples(),
             test_assets().join("output/EDG1001_2.png"),
         );
         save_frame(
             &frm.directions[0].frames[0],
-            &palette.colors_multiply(3),
+            palette.colors_multiply(3).colors_tuples(),
             test_assets().join("output/EDG1001_3.png"),
         );
         save_frame(
             &frm.directions[0].frames[0],
-            &palette.colors_multiply(4),
+            palette.colors_multiply(4).colors_tuples(),
             test_assets().join("output/EDG1001_4.png"),
         );
     }
@@ -271,7 +293,7 @@ mod tests {
             for (frame_index, frame) in dir.frames.iter().enumerate() {
                 save_frame(
                     &frame,
-                    &palette4,
+                    palette4.colors_tuples(),
                     format!(
                         "{}/output/HMWARRAA_{}_{}.png",
                         TEST_ASSETS_FOLDER, dir_index, frame_index

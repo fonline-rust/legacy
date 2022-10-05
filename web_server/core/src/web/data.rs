@@ -1,5 +1,4 @@
 use actix_web::{web, HttpResponse};
-use fo_data::Converter;
 
 pub async fn get(
     path: web::Path<String>,
@@ -7,7 +6,7 @@ pub async fn get(
 ) -> actix_web::Result<HttpResponse> {
     let image = web::block(move || {
         println!("data::get incoming... {:?}", path.as_ref());
-        data.fo_data.get_png(&path)
+        data.fo_data().converter().get_png(&path)
     })
     .await?
     .map_err(|err| super::internal_error(err))?;

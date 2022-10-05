@@ -19,7 +19,7 @@ use crate::{bridge, config, critters_db::CrittersDb, database::SledDb};
 use std::{collections::BTreeMap, sync::Arc};
 
 #[cfg(feature = "fo_data")]
-use fo_data::FoRetriever;
+use fo_data::FoData;
 
 mod avatar;
 mod char_action;
@@ -130,20 +130,55 @@ pub struct AppState {
     critters_db: CrittersDb,
     pub(crate) bridge: bridge::Bridge,
     #[cfg(feature = "fo_data")]
-    fo_data: Arc<FoRetriever>,
+    fo_data: Option<Arc<FoData>>,
     #[cfg(feature = "fo_proto_format")]
-    items: Arc<BTreeMap<u16, fo_proto_format::ProtoItem>>,
+    items: Option<Arc<FoItems>>,
     reqwest: reqwest::Client,
     pub(crate) server_status: Mutex<bridge::Status>,
 }
 
+type FoItems = BTreeMap<u16, fo_proto_format::ProtoItem>;
+
+pub struct AppDefinition {
+    pub config: config::Config,
+    pub db: sled::Db,
+    #[cfg(feature = "fo_data")]
+    fo_data: Option<FoData>,
+    #[cfg(feature = "fo_proto_format")]
+    items: Option<FoItems>,
+}
+impl AppDefinition {
+    pub fn new(config: config::Config, db: sled::Db) -> Self {
+        AppDefinition {
+            config,
+            db,
+            #[cfg(feature = "fo_data")]
+            fo_data: None,
+            #[cfg(feature = "fo_proto_format")]
+            items: None
+        }
+    }
+    #[cfg(feature = "fo_data")]
+    pub fn with_data(mut self, data: FoData) -> Self {
+        self.fo_data = Some(data);
+        self
+    }
+    #[cfg(feature = "fo_proto_format")]
+    pub fn with_items(mut self, items: FoItems) -> Self {
+        self.items = Some(items);
+        self
+    }
+    pub fn build(self) -> AppState {
+        AppState::new(self)
+    }
+}
+
 impl AppState {
     pub fn new(
-        config: config::Config,
-        db: sled::Db,
-        #[cfg(feature = "fo_data")] fo_data: FoRetriever,
-        #[cfg(feature = "fo_proto_format")] items: BTreeMap<u16, fo_proto_format::ProtoItem>,
+        def: AppDefinition,
     ) -> Self {
+        let AppDefinition{config, db, ..} = def;
+
         let critters_db = CrittersDb::new(config.paths.save_clients.clone());
 
         let sled_db = SledDb::new(db);
@@ -171,12 +206,20 @@ impl AppState {
             critters_db,
             bridge,
             #[cfg(feature = "fo_data")]
-            fo_data: Arc::new(fo_data),
+            fo_data: def.fo_data.map(Arc::new),
             #[cfg(feature = "fo_proto_format")]
-            items: Arc::new(items),
+            items: def.items.map(Arc::new),
             reqwest,
             server_status: Mutex::new(bridge::Status::new()),
         }
+    }
+    #[cfg(feature = "fo_data")]
+    pub fn fo_data(&self) -> &FoData {
+        self.fo_data.as_ref().unwrap()
+    }
+    #[cfg(feature = "fo_proto_format")]
+    pub fn fo_items(&self) -> &FoItems {
+        self.items.as_ref().unwrap()
     }
 }
 

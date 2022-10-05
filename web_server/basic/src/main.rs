@@ -16,7 +16,7 @@ fn main() -> std::io::Result<()> {
     db_path.push("sled");
     let db = sled::open(db_path).expect("Can't open sled database");
 
-    let state = web::AppState::new(config, db);
+    let state = web::AppDefinition::new(config, db).build();
     web::run(state);
     //db.flush().expect("Can't flush sled database");
     Ok(())

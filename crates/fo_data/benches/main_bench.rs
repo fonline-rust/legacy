@@ -1,16 +1,21 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::time::Duration;
 
-use fo_data::crawler::gather_paths;
+use fo_data::{crawler::gather_paths, datafiles::parse_datafile};
 
 fn bench_gather_paths(c: &mut Criterion) {
+    let path = std::path::Path::new("../../../CL4RP")
+        .canonicalize()
+        .unwrap();
+    let archives = parse_datafile(&path).expect("Parse datafiles");
+
     let mut group = c.benchmark_group("gather_paths");
     group.warm_up_time(Duration::from_secs(5));
     group.sample_size(10);
     group.measurement_time(Duration::from_secs(10));
     {
         group.bench_function("gather", |b| {
-            b.iter(|| gather_paths(black_box("../../CL4RP")))
+            b.iter(|| gather_paths(black_box(&archives)))
         });
     }
     /*{

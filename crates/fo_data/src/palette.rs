@@ -1,7 +1,8 @@
 use nom::number::complete::be_u8;
 use nom_prelude::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Palette {
     pub colors: Vec<Color>,
 }
@@ -10,35 +11,24 @@ impl Palette {
     pub fn colors_tuples(&self) -> &[(u8, u8, u8)] {
         unsafe { std::mem::transmute(self.colors.as_slice()) }
     }
-    pub fn colors_multiply(&self, val: u8) -> Vec<(u8, u8, u8)> {
-        fn mul(a: u8, b: u8) -> u8 {
-            a.saturating_mul(b)
-        }
-        self.colors
+    pub fn map_colors(&self, map: impl Fn(u8)->u8) -> Palette {
+        let colors = self.colors
             .iter()
             .map(|color| {
-                (
-                    mul(color.red, val),
-                    mul(color.green, val),
-                    mul(color.blue, val),
-                )
+                Color {
+                    red: map(color.red),
+                    green: map(color.green),
+                    blue: map(color.blue),
+                }
             })
-            .collect()
+            .collect();
+        Palette { colors }
     }
-    pub fn colors_multiply_f32(&self, val: f32) -> Vec<(u8, u8, u8)> {
-        fn mul(a: u8, b: f32) -> u8 {
-            (a as f32 * b).min(255.0) as u8
-        }
-        self.colors
-            .iter()
-            .map(|color| {
-                (
-                    mul(color.red, val),
-                    mul(color.red, val),
-                    mul(color.red, val),
-                )
-            })
-            .collect()
+    pub fn colors_multiply(&self, val: u8) -> Palette {
+        self.map_colors(|color| color.saturating_mul(val))
+    }
+    pub fn colors_multiply_f32(&self, val: f32) -> Palette {
+        self.map_colors(|color| (color as f32 * val).round().clamp(0.0, 255.0) as u8)
     }
 }
 
@@ -77,7 +67,7 @@ fn parse_palette<'a, Error: ParseError<&'a [u8]>>(
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Color {
     pub red: u8,
     pub green: u8,

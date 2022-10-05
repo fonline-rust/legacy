@@ -10,10 +10,6 @@ pub trait Retriever {
     fn file_by_path(&self, path: &str) -> Result<bytes::Bytes, Self::Error>;
 }
 
-pub trait HasPalette {
-    fn palette(&self) -> &[(u8, u8, u8)];
-}
-
 pub fn recognize_type(path: &str) -> FileType {
     move || -> Option<_> {
         let ext = Path::new(path).extension()?.to_str()?.to_ascii_lowercase();

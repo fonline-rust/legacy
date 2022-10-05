@@ -121,7 +121,7 @@ pub async fn view(
                     .0
                     .iter()
                     .filter(|obj| obj.is_scenery())
-                    .filter_map(|obj| data.items.get(&obj.proto_id).map(|proto| (obj, proto)))
+                    .filter_map(|obj| data.fo_items().get(&obj.proto_id).map(|proto| (obj, proto)))
                     .filter(|(_obj, proto)| {
                         (proto.Flags.unwrap_or(0) & fo_defines_fo4rp::fos::ITEM_HIDDEN) == 0
                     })

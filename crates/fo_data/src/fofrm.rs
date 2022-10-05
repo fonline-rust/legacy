@@ -273,9 +273,9 @@ mod test {
 
     #[test]
     fn parse_all_fofrm() {
-        let fo_data = crate::FoData::init(crate::CLIENT_FOLDER, crate::palette_path()).unwrap();
+        let registry = crate::FoRegistry::init(crate::CLIENT_FOLDER).unwrap();
         use crate::retriever::{fo::FoRetriever, Retriever};
-        let retriever = FoRetriever::new(fo_data);
+        let retriever = FoRetriever::new(registry);
         //let retriever = crate::test_retriever();
         for (path, file_info) in &retriever.data().files {
             if crate::retriever::recognize_type(path) == crate::FileType::FoFrm {

@@ -1,4 +1,4 @@
-use crate::{FileData, FileLocation, FoData};
+use crate::{FileData, FileLocation, FoRegistry};
 use parking_lot::{MappedMutexGuard as Guard, Mutex, MutexGuard};
 
 #[derive(Debug)]
@@ -15,11 +15,11 @@ type Archive = zip::ZipArchive<std::io::BufReader<std::fs::File>>;
 
 pub struct FoRetriever {
     archives: Vec<Mutex<Option<Box<Archive>>>>,
-    data: FoData,
+    data: FoRegistry,
 }
 
 impl FoRetriever {
-    pub fn new(data: FoData) -> Self {
+    pub fn new(data: FoRegistry) -> Self {
         let mut archives = Vec::new();
         archives.resize_with(data.archives.len(), Default::default);
         Self { archives, data }
@@ -44,7 +44,7 @@ impl FoRetriever {
             &mut **option.as_mut().expect("Should be some")
         }))
     }
-    pub fn data(&self) -> &FoData {
+    pub fn data(&self) -> &FoRegistry {
         &self.data
     }
     pub fn file_by_info(&self, file_info: &crate::FileInfo) -> Result<bytes::Bytes, Error> {
@@ -78,11 +78,5 @@ impl super::Retriever for FoRetriever {
 impl Into<crate::GetImageError> for Error {
     fn into(self) -> crate::GetImageError {
         crate::GetImageError::FoRetrieve(self)
-    }
-}
-
-impl super::HasPalette for FoRetriever {
-    fn palette(&self) -> &[(u8, u8, u8)] {
-        &self.data().palette
     }
 }
