@@ -1,6 +1,6 @@
 mod lexer;
 
-use std::collections::btree_map::{self, BTreeMap};
+use std::collections::btree_map::BTreeMap;
 
 #[derive(Debug, PartialEq)]
 pub struct MsgDictionary {
@@ -64,7 +64,7 @@ struct Entry<'a> {
     comment: Option<&'a str>,
 }
 
-fn parse_msg(input: &str) -> Result<MsgDictionary, String> {
+pub fn parse_msg(input: &str) -> Result<MsgDictionary, String> {
     let msg = lexer::tokenize_msg(input, true)?;
     let mut dict = MsgDictionary::new();
     for line in msg.lines {

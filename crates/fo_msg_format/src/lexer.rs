@@ -32,7 +32,7 @@ fn comment<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, 
     preceded(pair(space0, char('#')), optional_text)(i)
 }
 
-fn entry_with_tuple<'a, E: ParseError<&'a str>>(
+fn _entry_with_tuple<'a, E: ParseError<&'a str>>(
     ref mut i: &'a str,
 ) -> IResult<&'a str, Entry<'a>, E> {
     map(
@@ -51,7 +51,7 @@ fn entry_with_tuple<'a, E: ParseError<&'a str>>(
     )(i)
 }
 
-fn entry_with_macro<'a, E: ParseError<&'a str>>(
+fn _entry_with_macro<'a, E: ParseError<&'a str>>(
     ref mut i: &'a str,
 ) -> IResult<&'a str, Entry<'a>, E> {
     Ok(parse_struct!(
@@ -89,8 +89,8 @@ mod tests {
     }
 
     fn with_all_entry_impls(sample: &str, correct: &Entry) {
-        assert_eq!(&lex(entry_with_tuple, sample), correct);
-        assert_eq!(&lex(entry_with_macro, sample), correct);
+        assert_eq!(&lex(_entry_with_tuple, sample), correct);
+        assert_eq!(&lex(_entry_with_macro, sample), correct);
         assert_eq!(&lex(entry_with_apply, sample), correct);
     }
 
