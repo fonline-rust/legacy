@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "core", "basic", "with_map_viewer"
+    "core", "basic", #"with_map_viewer"
 ]
 
 [profile.release]

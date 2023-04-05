@@ -8,7 +8,7 @@ publish = false
 [features]
 default = ["tls-rust"]
 live_reload = []
-map_viewer = ["fo_data", "fo_map_format", "fo_proto_format", "nom_prelude"]
+#map_viewer = ["fo_data", "fo_map_format", "fo_proto_format", "nom_prelude"]
 tls-rust = ["actix-web/rustls", "reqwest/rustls-tls", "mrhandy/tls-rust"]
 #tls-native = ["actix-tls/nativetls", "reqwest/native-tls", "mrhandy/tls-native"]
 
@@ -19,10 +19,10 @@ protocol = { path = "../../crates/protocol" }
 fo_defines = { path = "../../crates/fo_defines", features = ["serde1"] }
 fo_defines_fo4rp = { path = "../../crates/fo_defines_fo4rp" }
 clients_db = { path = "../../crates/clients_db" }
-fo_data = { path = "../../crates/fo_data", optional = true }
-fo_map_format = { path = "../../crates/fo_map_format", optional = true }
+#fo_data = { path = "../../crates/fo_data", optional = true }
+#fo_map_format = { path = "../../crates/fo_map_format", optional = true }
 draw_geometry = { path = "../../crates/geometry_view" }
-fo_proto_format = { git = "https://github.com/fonline-roleplay/fo_proto_format.git", optional = true }
+#fo_proto_format = { git = "https://github.com/fonline-roleplay/fo_proto_format.git", optional = true }
 #fo_save_format = { git = "https://github.com/fonline-roleplay/fo_save_format.git" }
 nom_prelude = { path = "../../crates/nom_prelude", optional = true }
 mrhandy = { path = "../../crates/mrhandy", default-features = false }

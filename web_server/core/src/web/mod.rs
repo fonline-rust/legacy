@@ -137,6 +137,7 @@ pub struct AppState {
     pub(crate) server_status: Mutex<bridge::Status>,
 }
 
+#[cfg(feature = "fo_proto_format")]
 type FoItems = BTreeMap<u16, fo_proto_format::ProtoItem>;
 
 pub struct AppDefinition {
