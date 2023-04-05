@@ -1,9 +1,7 @@
-use parking_lot::{RwLock, RwLockReadGuard};
 pub use serenity::{
     self,
     model::guild::{Guild, Role},
 };
-use serenity::{client::bridge::gateway::GatewayIntents, model::guild::Member};
 use serenity::{
     client::{bridge::gateway::ShardManager, Client},
     framework::standard::{
@@ -14,7 +12,11 @@ use serenity::{
     prelude::{Context, EventHandler, Mutex, TypeMapKey},
     CacheAndHttp,
 };
-use std::{collections::HashMap, env, future::Future, sync::Arc, thread::JoinHandle};
+use serenity::{
+    model::{guild::Member, prelude::Channel},
+    prelude::GatewayIntents,
+};
+use std::{collections::HashMap, sync::Arc};
 
 #[group]
 #[commands(private)]
@@ -37,10 +39,6 @@ pub struct MrHandy {
 }
 
 impl MrHandy {
-    /*pub async fn shutdown(&self) {
-        let mut guard = self.shard_manager.lock().await;
-        guard.shutdown_all();
-    }*/
     pub async fn with_guild_member<O, F: Fn(&Guild, &Member) -> O>(
         &self,
         user_id: u64,
@@ -63,7 +61,6 @@ impl MrHandy {
             .guild_field(self.main_guild_id, |guild| {
                 (fun.take().unwrap())(Some(guild))
             })
-            .await
             .unwrap_or_else(|| (fun.take().unwrap())(None))
     }
 
@@ -83,6 +80,10 @@ impl MrHandy {
                 let channel = guild
                     .channels
                     .values()
+                    .filter_map(|ch| match ch {
+                        Channel::Guild(ch) => Some(ch),
+                        _ => None,
+                    })
                     .find(|ch| &ch.name == &channel)
                     .ok_or_else(|| Error::ChannelNotFound(channel))?;
                 Ok(channel.id)
@@ -170,12 +171,6 @@ pub enum Error {
     Serenity(serenity::Error),
 }
 
-/*impl Drop for MrHandy {
-    fn drop(&mut self) {
-        self.shutdown();
-    }
-}*/
-
 pub struct Members {
     members: HashMap<UserId, Member>,
 }
@@ -186,8 +181,13 @@ impl Members {
 }
 
 #[hook]
-async fn dispatch_error_hook(_context: &Context, _msg: &Message, error: DispatchError) {
-    eprintln!("DispatchError: {:?}", error)
+async fn dispatch_error_hook(
+    _context: &Context,
+    _msg: &Message,
+    error: DispatchError,
+    command_name: &str,
+) {
+    eprintln!("DispatchError: {error:?}, command: {command_name}")
 }
 
 #[hook]
@@ -198,23 +198,16 @@ async fn after_hook(_: &Context, _: &Message, cmd_name: &str, error: Result<(), 
 }
 
 pub async fn init(token: &str, main_guild_id: u64) -> (MrHandy, Client) {
-    // Login with a bot token from the environment
-    //let token = &env::var("DISCORD_TOKEN").expect("token");
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("~")) // set the bot's prefix to "~"
         .on_dispatch_error(dispatch_error_hook)
         .group(&GENERAL_GROUP)
         .after(after_hook);
-    let client = Client::builder(token)
-        .intents(GatewayIntents::all())
+    let client = Client::builder(token, GatewayIntents::all())
         .event_handler(Handler)
         .framework(framework)
         .await
         .expect("Error creating client");
-    /*{
-        let mut data = client.data.write().await;
-        data.insert::<MainGuild>(main_guild_id);
-    }*/
     let cache_and_http = Arc::clone(&client.cache_and_http);
     let shard_manager = Arc::clone(&client.shard_manager);
 
@@ -233,41 +226,3 @@ async fn private(ctx: &Context, msg: &Message) -> CommandResult {
     msg.author.dm(ctx, |msg| msg.content(":eyes:")).await?;
     Ok(())
 }
-/*
-#[command]
-fn ping(ctx: &mut Context, msg: &Message) -> CommandResult {
-    msg.reply(ctx, "Pong!")?;
-    Ok(())
-}
-
-#[command]
-fn roles(ctx: &mut Context, msg: &Message) -> CommandResult {
-    let who: Result<u64, _> = msg.content["~roles".len()..].trim().parse();
-    let (name, roles) = if let Ok(who) = who {
-        println!("Getting roles from: {}", who);
-        let data = ctx.data.read();
-        let main_guild = data.get::<MainGuild>().ok_or("Can get MainGuild id")?;
-
-        let cache = ctx.cache.read();
-        let guild = cache
-            .guild(*main_guild)
-            .ok_or("MainGuild isn't in cache.")?;
-        let guild = guild.read();
-        guild
-            .members
-            .get(&UserId(who))
-            .map(|member| (member.display_name().into_owned(), member.roles.clone()))
-    } else {
-        println!("Getting roles from self");
-        msg.member(&ctx)
-            .map(|member| (member.display_name().into_owned(), member.roles.clone()))
-    }
-    .ok_or("Member is None")?;
-
-    //let roles = member.roles(&ctx).ok_or("Roles are None")?;
-    //let roles: Vec<_> = roles.into_iter().map(|role| role).collect();
-    let roles_string = format!("Name: {}, Roles: {:#?}", name, &roles);
-    msg.reply(&ctx, roles_string)?;
-    Ok(())
-}
-*/
