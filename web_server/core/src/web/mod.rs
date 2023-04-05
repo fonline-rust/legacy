@@ -273,6 +273,7 @@ async fn run_async(mut state: AppState) {
                 actix_session::storage::CookieSessionStore::default(),
                 state.config.session.cookie_key(),
             )
+            .cookie_secure(false)
             .cookie_name("meta-session".into())
             .build();
             let app = App::new()
